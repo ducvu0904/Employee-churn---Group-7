@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 
 def main():
     base_dir = Path(__file__).resolve().parent
-    df = pd.read_csv("HR_Dataset.csv")
+    df = pd.read_csv(base_dir / "data" / "HR_Dataset.csv")
     df.columns = df.columns.str.strip()
     df = df.drop_duplicates() 
 
