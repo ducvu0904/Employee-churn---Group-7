@@ -1,3 +1,5 @@
 *.pdf
 .vscode/
 .env
+.venv/
+.ipynb_checkpoints/
