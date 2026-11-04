@@ -16,8 +16,8 @@ recorded churn status. Predicting future departures would additionally require
 timestamps, a prediction horizon, and verification that every feature was known
 before departure.
 
-The combined notebook removes 3,008 exact duplicate rows, then uses the same
-stratified sampling as `split_data.py`, with seed 42, to create these fixed splits:
+The combined notebook removes 3,008 exact duplicate rows, then uses stratified
+sampling with seed 42 to create these fixed splits:
 
 | Split | Rows | Purpose |
 | --- | ---: | --- |
@@ -46,7 +46,7 @@ python -m ipykernel install --user --name employee-churn --display-name "Employe
    installed kernel.
 2. Choose **Restart Kernel and Run All**. The notebook loads the HR dataset,
    removes duplicates, creates the splits in memory, and runs EDA and modeling.
-   You do not need to run `split_data.py` or either separate notebook first.
+    No separate splitting script or additional analysis notebook is required.
    Tuning uses two parallel workers and can take several minutes.
 3. Read the tables and figures in the notebook. Nine 300-dpi PNG figures are
    saved in `plots/`, including the seven EDA figures, ROC/precision–recall curves
@@ -58,12 +58,25 @@ The combined notebook does not read or overwrite `train.csv`, `val.csv`, or
 `test.csv`. It keeps the splits in memory and uses a separate EDA copy for the
 target-derived `Status` label, so this label never enters the model inputs.
 
-### Original separate workflow (optional)
+## Repository structure
 
-`EDA.ipynb`, `Classification_Models.ipynb`, and `split_data.py` are preserved as
-the original separate workflow. These notebooks use the supplied split CSVs.
-If you intentionally need to regenerate those CSVs, run `python split_data.py`
-(this overwrites the three split files), then run EDA and classification in order.
+```text
+Employee_Churn_Analysis.ipynb   # Combined EDA, model training, and evaluation
+README.md                     # Setup, workflow, results, and limitations
+requirements.txt              # Pinned Python dependencies
+data/
+    HR_Dataset.csv            # Input used by the combined notebook
+    train.csv                 # Legacy split files; not used by the notebook
+    val.csv
+    test.csv
+plots/                        # Nine exported EDA and evaluation figures
+results/
+    test_metrics.csv          # Exported final model comparison
+```
+
+The earlier `EDA.ipynb`, `Classification_Models.ipynb`, and `split_data.py` have
+been replaced by `Employee_Churn_Analysis.ipynb`. Use the combined notebook for
+the complete workflow; the legacy split CSVs are not required to run it.
 
 ## Modeling workflow
 
@@ -127,8 +140,8 @@ The consistency audit reran the current search grids without changing them.
 Gradient Boosting selected 100 estimators, learning rate 0.01, and depth 5.
 Earlier saved outputs selected learning rate 0.05, absent from the current grid;
 those stale outputs and the exported test CSV have been refreshed. The companion
-report and its evidence map are in `../employee_churn_report/` (local sibling
-folder, not part of this repository). See `audit/CONSISTENCY_AUDIT.md` there.
+report and consistency audit are maintained outside this repository and are not
+required to run the analysis.
 
 Validation permutation importance identifies satisfaction, last evaluation, and
 project count as the three largest contributors by mean F1 decrease. These are
