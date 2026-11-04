@@ -1,7 +1,11 @@
-# Employee Churn Classification
+# Employee Churn: End-to-End Analysis
 
 Explore employee churn and compare traditional machine-learning classifiers. The
 target is `left`: **0 = Stayed**, **1 = Left**.
+
+**Start with `Employee_Churn_Analysis.ipynb`.** It combines the dataset overview,
+duplicate removal, splitting, EDA, classification, and final evaluation in one
+notebook. Its only data input is `data/HR_Dataset.csv`.
 
 ## Scope and dataset
 
@@ -12,14 +16,14 @@ recorded churn status. Predicting future departures would additionally require
 timestamps, a prediction horizon, and verification that every feature was known
 before departure.
 
-`split_data.py` removes 3,008 exact duplicate rows, then uses stratified sampling
-with seed 42 to create these fixed splits:
+The combined notebook removes 3,008 exact duplicate rows, then uses the same
+stratified sampling as `split_data.py`, with seed 42, to create these fixed splits:
 
 | Split | Rows | Purpose |
 | --- | ---: | --- |
 | Training | 8,393 | EDA, five-fold stratified CV, and model fitting |
 | Validation | 1,799 | Decision-threshold selection and permutation importance |
-| Test | 1,799 | Final report for the selected model and dummy baseline |
+| Test | 1,799 | Final comparison of four models and the dummy baseline |
 
 Exact duplicates are treated as repeated records, though employee IDs are not
 available to prove identity. Deduplication takes place **before** splitting to
@@ -38,12 +42,28 @@ python -m pip install -r requirements.txt
 python -m ipykernel install --user --name employee-churn --display-name "Employee churn"
 ```
 
-1. Use the supplied CSV splits. If you intentionally need to regenerate them,
-   run `python split_data.py` (this overwrites the three split files).
-2. Open `EDA.ipynb` and run all cells. Only the dataset overview uses the full HR
-   dataset; feature analysis uses training data only.
-3. Open `Classification_Models.ipynb`, select the installed kernel, and run all
-   cells. Tuning uses two parallel workers and can take several minutes.
+1. Open **`Employee_Churn_Analysis.ipynb`** from the project folder and select the
+   installed kernel.
+2. Choose **Restart Kernel and Run All**. The notebook loads the HR dataset,
+   removes duplicates, creates the splits in memory, and runs EDA and modeling.
+   You do not need to run `split_data.py` or either separate notebook first.
+   Tuning uses two parallel workers and can take several minutes.
+3. Read the tables and figures in the notebook. Nine 300-dpi PNG figures are
+   saved in `plots/`, including the seven EDA figures, ROC/precision–recall curves
+   (`08_classification_roc_pr.png`), and the confusion matrix
+   (`09_classification_confusion_matrix.png`). The final comparison table is
+   saved to `results/test_metrics.csv`. Rerunning replaces these outputs.
+
+The combined notebook does not read or overwrite `train.csv`, `val.csv`, or
+`test.csv`. It keeps the splits in memory and uses a separate EDA copy for the
+target-derived `Status` label, so this label never enters the model inputs.
+
+### Original separate workflow (optional)
+
+`EDA.ipynb`, `Classification_Models.ipynb`, and `split_data.py` are preserved as
+the original separate workflow. These notebooks use the supplied split CSVs.
+If you intentionally need to regenerate those CSVs, run `python split_data.py`
+(this overwrites the three split files), then run EDA and classification in order.
 
 ## Modeling workflow
 
@@ -64,7 +84,9 @@ python -m ipykernel install --user --name employee-churn --display-name "Employe
   **always-Stayed** baseline. Report the CV-selected model separately at its
   validation-selected threshold. Show accuracy, precision, recall, F1, ROC-AUC,
   and average precision. Test scores do not choose the model or threshold.
-  No confusion matrices or error analysis are included.
+  Show the selected model's confusion matrix at its validation-selected threshold,
+  with counts of false positives and false negatives. No subgroup error analysis
+  or test-driven model changes are performed.
 
 F1 is the current compromise between precision and recall; no intervention cost
 has been supplied. The always-Stayed classifier reaches about 83.4% accuracy but
@@ -81,7 +103,7 @@ The executed workflow selected **Random Forest** (`n_estimators=100`,
 | Model | Mean CV F1 | Fold standard deviation |
 | --- | ---: | ---: |
 | Random Forest | 0.9451 | 0.0112 |
-| Gradient Boosting | 0.9442 | 0.0088 |
+| Gradient Boosting | 0.9436 | 0.0133 |
 | KNN | 0.8712 | 0.0103 |
 | Logistic Regression | 0.5456 | 0.0066 |
 
@@ -94,12 +116,19 @@ establish a statistically significant difference. Validation selected threshold
 | Logistic Regression | 0.5 | 0.7765 | 0.4130 | 0.8289 | 0.5513 | 0.8453 | 0.3843 |
 | KNN | 0.5 | 0.9566 | 0.8374 | 0.9161 | 0.8750 | 0.9532 | 0.8531 |
 | Random Forest | 0.5 | 0.9828 | 0.9785 | 0.9161 | 0.9463 | 0.9748 | 0.9611 |
-| Gradient Boosting | 0.5 | 0.9839 | 0.9654 | 0.9362 | 0.9506 | 0.9825 | 0.9675 |
+| Gradient Boosting | 0.5 | 0.9844 | 0.9821 | 0.9228 | 0.9516 | 0.9753 | 0.9527 |
 | Always Stayed | 0.5 | 0.8344 | 0.0000 | 0.0000 | 0.0000 | 0.5000 | 0.1656 |
 | Selected Random Forest (validation threshold) | 0.4983 | 0.9839 | 0.9786 | 0.9228 | 0.9499 | 0.9748 | 0.9611 |
 
 Gradient Boosting has a slightly higher test F1, but Random Forest remains the
 selected model because selection used training-set CV rather than test scores.
+
+The consistency audit reran the current search grids without changing them.
+Gradient Boosting selected 100 estimators, learning rate 0.01, and depth 5.
+Earlier saved outputs selected learning rate 0.05, absent from the current grid;
+those stale outputs and the exported test CSV have been refreshed. The companion
+report and its evidence map are in `../employee_churn_report/` (local sibling
+folder, not part of this repository). See `audit/CONSISTENCY_AUDIT.md` there.
 
 Validation permutation importance identifies satisfaction, last evaluation, and
 project count as the three largest contributors by mean F1 decrease. These are
